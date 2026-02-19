@@ -139,3 +139,4 @@ backend/playwright-browsers/
 *.temp
 .temp/
 .tmp/
+__pycache__/
