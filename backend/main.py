@@ -1,84 +1,150 @@
-import os
-import json
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from typing import List, Optional
+import json
+import os
+from datetime import datetime
+
 from engine.scraper import JobScraper
 from engine.processor import JobProcessor
-import google.generativeai as genai
+from engine.utils import PDFProcessor
 
-app = FastAPI(title="AI Job Agent Backend", version="1.0.0")
+app = FastAPI(title="AI Job Agent API", version="1.0.0")
 
-# CORS middleware for frontend integration
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # React dev server
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],  # React dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Pydantic model for job analysis request
-class JobRequest(BaseModel):
-    jd_text: str
-    cv_text: str
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "jd_text": "We are looking for a Python developer with experience in FastAPI...",
-                "cv_text": "John Doe - Software Engineer with 5 years experience in Python..."
-            }
-        }
+# Pydantic models
+class Job(BaseModel):
+    id: str
+    title: str
+    company: str
+    location: str
+    salary: str
+    matchScore: int
+    logo: Optional[str] = None
+    whyMatch: List[str]
+    missingKeywords: List[str]
+    description: str
+    requirements: List[str]
+    posted: str
 
-# Initialize tools
+class JobMatchRequest(BaseModel):
+    resume_text: str
+    job_criteria: Optional[dict] = None
+
+# Global instances
 scraper = JobScraper()
-ai_processor = JobProcessor()
+processor = JobProcessor()
+pdf_processor = PDFProcessor()
 
+# Routes
 @app.get("/")
 async def root():
-    return {"message": "AI Job Agent Backend API"}
+    return {"message": "AI Job Agent API", "status": "running"}
 
-@app.get("/jobs")
-async def get_jobs():
-    # Load jobs from data/jobs.json
-    if os.path.exists("data/jobs.json"):
-        with open("data/jobs.json", "r") as f:
-            jobs = json.load(f)
-        return {"jobs": jobs}
-    return {"jobs": []}
-
-@app.post("/scrape")
-async def scrape_and_process():
-    # Scrape jobs using Playwright
-    raw_jobs = scrape_jobs()
-    
-    # Process with Gemini AI
-    processed_jobs = process_job_data(raw_jobs)
-    
-    # Save to data/jobs.json
-    with open("data/jobs.json", "w") as f:
-        json.dump(processed_jobs, f, indent=2)
-    
-    return {"message": "Jobs scraped and processed", "count": len(processed_jobs)}
-
-@app.post("/analyze")
-def analyze_job(request: JobRequest):
+@app.post("/api/analyze-resume")
+async def analyze_resume(file: UploadFile = File(...)):
+    """Analyze uploaded resume PDF"""
     try:
-        final_jd_text = request.jd_text
-        
-        if request.jd_text.startswith(("http://", "https://")):
-            # Now the Playwright Sync API will run smoothly
-            scraped_content = scraper.scrape_url(request.jd_text)
-            if not scraped_content:
-                raise HTTPException(status_code=400, detail="Failed to scrape content.")
-            final_jd_text = scraped_content
+        if not file.filename.endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
-        print("--- DEBUG: JD CONTENT START ---")
-        print(final_jd_text[:1000])  
-        print("--- DEBUG: JD CONTENT END ---")
+        # Read and process PDF
+        content = await file.read()
+        resume_text = pdf_processor.extract_text_from_pdf(content)
 
-        result = ai_processor.analyze(request.cv_text, final_jd_text)
-        return result
+        # Process with AI
+        analysis = await processor.analyze_resume(resume_text)
+
+        return {
+            "resume_text": resume_text,
+            "analysis": analysis,
+            "status": "success"
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Resume analysis failed: {str(e)}")
+
+@app.post("/api/scrape-jobs")
+async def scrape_jobs(request: JobMatchRequest):
+    """Scrape jobs and match with resume"""
+    try:
+        # Scrape jobs
+        jobs_data = await scraper.scrape_jobs()
+
+        # Process and match jobs
+        matched_jobs = []
+        for job_data in jobs_data:
+            match_result = await processor.match_job_with_resume(
+                job_data, request.resume_text
+            )
+            matched_jobs.append(match_result)
+
+        # Save to file
+        save_jobs_to_file(matched_jobs)
+
+        return {
+            "jobs": matched_jobs,
+            "total_jobs": len(matched_jobs),
+            "status": "success"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Job scraping failed: {str(e)}")
+
+@app.get("/api/jobs", response_model=List[Job])
+async def get_jobs():
+    """Get all stored jobs"""
+    try:
+        jobs = load_jobs_from_file()
+        return jobs
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load jobs: {str(e)}")
+
+@app.get("/api/jobs/{job_id}", response_model=Job)
+async def get_job(job_id: str):
+    """Get specific job by ID"""
+    try:
+        jobs = load_jobs_from_file()
+        job = next((j for j in jobs if j["id"] == job_id), None)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        return job
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load job: {str(e)}")
+
+# Helper functions
+def save_jobs_to_file(jobs: List[dict]):
+    """Save jobs to JSON file"""
+    os.makedirs("backend/data", exist_ok=True)
+    with open("backend/data/jobs.json", "w", encoding="utf-8") as f:
+        json.dump({
+            "jobs": jobs,
+            "last_updated": datetime.now().isoformat(),
+            "total_jobs": len(jobs)
+        }, f, indent=2, ensure_ascii=False)
+
+def load_jobs_from_file() -> List[dict]:
+    """Load jobs from JSON file"""
+    try:
+        with open("backend/data/jobs.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data.get("jobs", [])
+    except FileNotFoundError:
+        return []
+    except Exception as e:
+        print(f"Error loading jobs: {e}")
+        return []
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
