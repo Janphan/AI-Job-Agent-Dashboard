@@ -1,5 +1,6 @@
 from playwright.sync_api import sync_playwright
 import re
+import time
 
 class JobScraper:
     def __init__(self):
@@ -46,3 +47,23 @@ class JobScraper:
         # Strip whitespace from the beginning and end of each line
         lines = [line.strip() for line in text.split('\n') if line.strip() != '']
         return '\n'.join(lines)
+
+    def scrape_job_content(self, url):
+        """
+        Scrape job content from URL using Playwright.
+        """
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.goto(url)
+                time.sleep(3)  # Wait for page load
+                
+                # Get all text content from page
+                content = page.evaluate("document.body.innerText")
+                browser.close()
+                
+                return content
+        except Exception as e:
+            print(f"Scraping error: {e}")
+            return None
