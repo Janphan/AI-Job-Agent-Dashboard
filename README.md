@@ -32,8 +32,6 @@ A modern full-stack application for AI-powered job matching with automated job s
 
 ## Demo
 
-The original design is available at [Figma](https://www.figma.com/design/fGlC22RLSZNTi23s5F4f1k/AI-Job-Agent-Dashboard).
-
 ## Features
 
 - **AI-Powered Job Analysis**: Google Gemini integration for intelligent job matching
@@ -43,7 +41,6 @@ The original design is available at [Figma](https://www.figma.com/design/fGlC22R
 - **Interactive Dashboard**: Modern React interface with job cards and detailed views
 - **Real-time Data**: Live job data updates through FastAPI backend
 - **Responsive Design**: Optimized for desktop and mobile devices
-- **Dark Theme**: Modern UI with professional styling
 
 ## Architecture
 
@@ -237,23 +234,24 @@ interface Job {
 4. Set up environment variables:
    ```bash
    cp .env.example .env
-   # Edit .env and add your GOOGLE_API_KEY
+   # Edit .env and add your GEMINI_API_KEY
    ```
 
 5. Start the FastAPI server:
    ```bash
-   python main.py
+   uvicorn main:app --reload
    ```
 
 ### Frontend Setup
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install Node.js dependencies:
+1. Install Node.js dependencies:
    ```bash
    npm install
+   ```
+
+2. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env if you need to change the API URL
    ```
 
 3. Start the development server:
@@ -263,9 +261,22 @@ interface Job {
 
 4. Open [http://localhost:5173](http://localhost:5173) in your browser
 
+### Environment Variables
+
+#### Backend (.env)
+```env
+GEMINI_API_KEY=your_google_gemini_api_key_here
+```
+
+#### Frontend (.env)
+```env
+VITE_API_URL=http://127.0.0.1:8000
+```
+
 ### Full Application
-- Backend API will be available at `http://localhost:8000`
+- Backend API will be available at `http://127.0.0.1:8000`
 - Frontend will be available at `http://localhost:5173`
+- API documentation at `http://127.0.0.1:8000/docs`
 - Make sure both servers are running for full functionality
 
 ## Contributing
