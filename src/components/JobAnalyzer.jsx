@@ -2,38 +2,27 @@ import React, { useState } from 'react';
 
 const JobAnalyzer = () => {
     const [url, setUrl] = useState('');
-    const [cvFile, setCvFile] = useState(null);
+    const [myCVText, setMyCVText] = useState('');
     const [loading, setLoading] = useState(false);
     const [analysisResult, setAnalysisResult] = useState(null);
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file && file.type === 'application/pdf') {
-            setCvFile(file);
-        } else {
-            alert('Please select a PDF file');
-            e.target.value = '';
-        }
-    };
-
     const handleAnalyze = async () => {
-        if (!url.trim() || !cvFile) {
-            alert('Please provide both job URL and CV PDF file');
+        if (!url.trim() || !myCVText.trim()) {
+            alert('Please provide both job URL and CV text');
             return;
         }
 
-        // 1. Loading state
+        // 1. Hiển thị trạng thái Loading trên UI
         setLoading(true);
 
         try {
-            // Create FormData for PDF upload
-            const formData = new FormData();
-            formData.append('jd_text', url);
-            formData.append('cv_file', cvFile);
-
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/analyze-pdf`, {
+            const response = await fetch('http://127.0.0.1:8000/analyze', {
                 method: 'POST',
-                body: formData // Don't set Content-Type, let browser set it with boundary
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jd_text: url, // Gửi link job vừa paste
+                    cv_text: myCVText // Biến chứa text CV của bạn
+                })
             });
 
             if (!response.ok) {
@@ -42,10 +31,10 @@ const JobAnalyzer = () => {
 
             const result = await response.json();
 
-            // 2. Update state with real analysis data
+            // 2. Update State to display real data from backend
             setAnalysisResult(result);
         } catch (error) {
-            console.error("Backend connection error:", error);
+            console.error("Lỗi kết nối Backend:", error);
             alert('Error connecting to backend: ' + error.message);
         } finally {
             setLoading(false);
@@ -55,7 +44,7 @@ const JobAnalyzer = () => {
     return (
         <div className="p-6 bg-gray-900 min-h-screen">
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold text-white mb-8">🤖 AI Job Analyzer</h1>
+                <h1 className="text-3xl font-bold text-white mb-8">AI Job Analyzer</h1>
 
                 {/* Input Section */}
                 <div className="bg-gray-800 p-6 rounded-lg mb-6">
@@ -77,19 +66,15 @@ const JobAnalyzer = () => {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Upload Your CV/Resume (PDF)
+                                Your CV/Resume Text
                             </label>
-                            <input
-                                type="file"
-                                accept=".pdf"
-                                onChange={handleFileChange}
-                                className="w-full p-3 bg-gray-700 text-white rounded border border-gray-600 focus:border-violet-500 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+                            <textarea
+                                value={myCVText}
+                                onChange={(e) => setMyCVText(e.target.value)}
+                                placeholder="Paste your CV/resume content here..."
+                                rows={8}
+                                className="w-full p-3 bg-gray-700 text-white rounded border border-gray-600 focus:border-violet-500 focus:outline-none resize-none"
                             />
-                            {cvFile && (
-                                <p className="text-sm text-gray-400 mt-2">
-                                    Selected: {cvFile.name} ({(cvFile.size / 1024 / 1024).toFixed(2)} MB)
-                                </p>
-                            )}
                         </div>
 
                         <button
@@ -97,7 +82,7 @@ const JobAnalyzer = () => {
                             disabled={loading}
                             className="w-full py-3 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
                         >
-                            {loading ? 'Analyzing PDF...' : 'Analyze Job Match'}
+                            {loading ? 'Analyzing...' : 'Analyze Job Match'}
                         </button>
                     </div>
                 </div>
@@ -105,7 +90,7 @@ const JobAnalyzer = () => {
                 {/* Results Section */}
                 {analysisResult && (
                     <div className="bg-gray-800 p-6 rounded-lg">
-                        <h2 className="text-xl font-semibold text-white mb-4">🎯 AI Analysis Results</h2>
+                        <h2 className="text-xl font-semibold text-white mb-4">🤖 AI Analysis Results</h2>
 
                         {analysisResult.error ? (
                             <div className="bg-red-900/20 border border-red-600 p-4 rounded-lg">
@@ -127,7 +112,7 @@ const JobAnalyzer = () => {
                         <div className="bg-gray-800 p-6 rounded-lg">
                             <div className="flex items-center space-x-4">
                                 <div className="animate-spin h-6 w-6 border-2 border-violet-500 border-t-transparent rounded-full"></div>
-                                <span className="text-white">Analyzing PDF and job compatibility...</span>
+                                <span className="text-white">Analyzing job compatibility...</span>
                             </div>
                         </div>
                     </div>

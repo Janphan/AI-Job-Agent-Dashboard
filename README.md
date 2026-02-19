@@ -234,24 +234,23 @@ interface Job {
 4. Set up environment variables:
    ```bash
    cp .env.example .env
-   # Edit .env and add your GEMINI_API_KEY
+   # Edit .env and add your GOOGLE_API_KEY
    ```
 
 5. Start the FastAPI server:
    ```bash
-   uvicorn main:app --reload
+   python main.py
    ```
 
 ### Frontend Setup
-1. Install Node.js dependencies:
+1. Navigate to the frontend directory:
    ```bash
-   npm install
+   cd frontend
    ```
 
-2. Set up environment variables:
+2. Install Node.js dependencies:
    ```bash
-   cp .env.example .env
-   # Edit .env if you need to change the API URL
+   npm install
    ```
 
 3. Start the development server:
@@ -261,22 +260,9 @@ interface Job {
 
 4. Open [http://localhost:5173](http://localhost:5173) in your browser
 
-### Environment Variables
-
-#### Backend (.env)
-```env
-GEMINI_API_KEY=your_google_gemini_api_key_here
-```
-
-#### Frontend (.env)
-```env
-VITE_API_URL=http://127.0.0.1:8000
-```
-
 ### Full Application
-- Backend API will be available at `http://127.0.0.1:8000`
+- Backend API will be available at `http://localhost:8000`
 - Frontend will be available at `http://localhost:5173`
-- API documentation at `http://127.0.0.1:8000/docs`
 - Make sure both servers are running for full functionality
 
 ## Contributing
