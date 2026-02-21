@@ -1,11 +1,10 @@
-import os
-import json
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from engine.scraper import JobScraper
 from engine.processor import JobProcessor
-import google.generativeai as genai
+import json
+import os
 
 app = FastAPI(title="AI Job Agent Backend", version="1.0.0")
 
@@ -22,14 +21,6 @@ app.add_middleware(
 class JobRequest(BaseModel):
     jd_text: str
     cv_text: str
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "jd_text": "We are looking for a Python developer with experience in FastAPI...",
-                "cv_text": "John Doe - Software Engineer with 5 years experience in Python..."
-            }
-        }
 
 # Initialize tools
 scraper = JobScraper()
@@ -38,29 +29,6 @@ ai_processor = JobProcessor()
 @app.get("/")
 async def root():
     return {"message": "AI Job Agent Backend API"}
-
-@app.get("/jobs")
-async def get_jobs():
-    # Load jobs from data/jobs.json
-    if os.path.exists("data/jobs.json"):
-        with open("data/jobs.json", "r") as f:
-            jobs = json.load(f)
-        return {"jobs": jobs}
-    return {"jobs": []}
-
-@app.post("/scrape")
-async def scrape_and_process():
-    # Scrape jobs using Playwright
-    raw_jobs = scrape_jobs()
-    
-    # Process with Gemini AI
-    processed_jobs = process_job_data(raw_jobs)
-    
-    # Save to data/jobs.json
-    with open("data/jobs.json", "w") as f:
-        json.dump(processed_jobs, f, indent=2)
-    
-    return {"message": "Jobs scraped and processed", "count": len(processed_jobs)}
 
 @app.post("/analyze")
 def analyze_job(request: JobRequest):
@@ -75,7 +43,7 @@ def analyze_job(request: JobRequest):
             final_jd_text = scraped_content
 
         print("--- DEBUG: JD CONTENT START ---")
-        print(final_jd_text[:1000])  
+        print(final_jd_text[:1000])  # Print first 1000 characters to console
         print("--- DEBUG: JD CONTENT END ---")
 
         result = ai_processor.analyze(request.cv_text, final_jd_text)
