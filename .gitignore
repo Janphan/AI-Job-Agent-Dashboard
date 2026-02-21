@@ -13,11 +13,13 @@ build/
 .env.production
 
 # Python
-__pycache__
+**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+*.py[cod]
+*$py.class
 
 # IDE
 .vscode/
