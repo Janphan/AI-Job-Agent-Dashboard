@@ -1,5 +1,6 @@
 import google.generativeai as genai
 import os
+import json
 from dotenv import load_dotenv
 
 class JobProcessor:
@@ -9,7 +10,6 @@ class JobProcessor:
         
         # Get the API key
         api_key = os.getenv("GEMINI_API_KEY")
-        print(f"DEBUG: API Key loaded: {api_key[:10]}..." if api_key else "DEBUG: No API key found")
         
         if not api_key:
             raise ValueError("GEMINI_API_KEY not found in .env file")
@@ -20,7 +20,7 @@ class JobProcessor:
     def analyze(self, cv_text: str, jd_text: str):
         try:
             # Use models/gemini-2.5-flash model with full path
-            model = genai.GenerativeModel('models/gemini-2.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
             prompt = f"""
 You are a Senior Technical Recruiter. Compare the CV and JD provided.
@@ -39,7 +39,27 @@ JD: {jd_text}
 """
 
             response = model.generate_content(prompt)
-            return {"analysis": response.text}
+            
+            # Parse the JSON response from Gemini and return as object (not string)
+            try:
+                analysis_json = json.loads(response.text)
+                return analysis_json  # Return direct object, not {"analysis": "..."}
+            except json.JSONDecodeError:
+                # If Gemini returns invalid JSON, wrap it
+                return {
+                    "error": "Invalid JSON from AI",
+                    "raw_response": response.text,
+                    "match_score": 0,
+                    "strengths": [],
+                    "missing_skills": ["AI response error"],
+                    "summary": "Error parsing AI analysis"
+                }
             
         except Exception as e:
-            return {"error": str(e)}
+            return {
+                "error": str(e),
+                "match_score": 0,
+                "strengths": [],
+                "missing_skills": ["System error"],
+                "summary": "Error during analysis"
+            }
