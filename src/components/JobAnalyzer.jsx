@@ -3,26 +3,51 @@ import React, { useState } from 'react';
 const JobAnalyzer = () => {
     const [url, setUrl] = useState('');
     const [myCVText, setMyCVText] = useState('');
+    const [cvFile, setCvFile] = useState(null);
+    const [uploadMode, setUploadMode] = useState('text');
+    const [dragActive, setDragActive] = useState(false);
     const [loading, setLoading] = useState(false);
     const [analysisResult, setAnalysisResult] = useState(null);
 
     const handleAnalyze = async () => {
-        if (!url.trim() || !myCVText.trim()) {
-            alert('Please provide both job URL and CV text');
+        if (!url.trim()) {
+            alert('Please provide a job URL or job description');
+            return;
+        }
+
+        if (uploadMode === 'text' && !myCVText.trim()) {
+            alert('Please provide your CV text');
+            return;
+        }
+
+        if (uploadMode === 'file' && !cvFile) {
+            alert('Please upload a PDF CV file');
             return;
         }
 
         setLoading(true);
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    jd_text: url,
-                    cv_text: myCVText
-                })
-            });
+            let response;
+            if (uploadMode === 'text') {
+                response = await fetch('http://127.0.0.1:8000/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jd_text: url,
+                        cv_text: myCVText
+                    })
+                });
+            } else {
+                const formData = new FormData();
+                formData.append('jd_text', url);
+                formData.append('cv_file', cvFile);
+
+                response = await fetch('http://127.0.0.1:8000/analyze-with-pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+            }
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -52,6 +77,41 @@ const JobAnalyzer = () => {
         if (score >= 60) return 'bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-500/30';
         if (score >= 40) return 'bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30';
         return 'bg-gradient-to-r from-red-500/10 to-pink-500/10 border-red-500/30';
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file && file.type === 'application/pdf') {
+            setCvFile(file);
+        } else {
+            alert("Please select a PDF file.");
+            e.target.value = '';
+        }
+    };
+
+    const handleDrag = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const file = e.dataTransfer.files[0];
+            if (file.type === 'application/pdf') {
+                setCvFile(file);
+            } else {
+                alert("Please select a PDF file.");
+            }
+        }
     };
 
     const getScoreEmoji = (score) => {
@@ -100,17 +160,109 @@ const JobAnalyzer = () => {
                         <div className="space-y-3">
                             <label className="block text-sm font-medium text-gray-300">
                                 <span className="flex items-center">
-                                    📄 Your CV/Resume Text
+                                    📄 Your CV/Resume
                                     <span className="ml-2 px-2 py-1 bg-violet-500/20 text-violet-300 text-xs rounded-full">Required</span>
                                 </span>
                             </label>
-                            <textarea
-                                value={myCVText}
-                                onChange={(e) => setMyCVText(e.target.value)}
-                                placeholder="Paste your CV/resume content here... Include your skills, experience, education, and key achievements."
-                                rows={10}
-                                className="w-full p-4 bg-gray-700/50 text-white rounded-xl border border-gray-600/50 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all duration-200 resize-none backdrop-blur-sm"
-                            />
+                            
+                            {/* CV Input Mode Toggle */}
+                            <div className="flex space-x-2 mb-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setUploadMode("text")}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                        uploadMode === "text" 
+                                            ? "bg-violet-600 text-white shadow-lg" 
+                                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                    }`}
+                                >
+                                    📝 Paste CV Text
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setUploadMode("file")}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                        uploadMode === "file" 
+                                            ? "bg-violet-600 text-white shadow-lg" 
+                                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                    }`}
+                                >
+                                    📎 Upload PDF CV
+                                </button>
+                            </div>
+
+                            {/* CV Input Area */}
+                            {uploadMode === "text" ? (
+                                <textarea
+                                    value={myCVText}
+                                    onChange={(e) => setMyCVText(e.target.value)}
+                                    placeholder="Paste your CV/resume content here... Include your skills, experience, education, and key achievements."
+                                    rows={10}
+                                    className="w-full p-4 bg-gray-700/50 text-white rounded-xl border border-gray-600/50 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all duration-200 resize-none backdrop-blur-sm"
+                                />
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* File Upload Drop Zone */}
+                                    <div 
+                                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
+                                            dragActive 
+                                                ? 'border-violet-400 bg-violet-900/20' 
+                                                : 'border-gray-600 bg-gray-800/50 hover:border-violet-500 hover:bg-gray-700/50'
+                                        }`}
+                                        onDragEnter={handleDrag}
+                                        onDragLeave={handleDrag}
+                                        onDragOver={handleDrag}
+                                        onDrop={handleDrop}
+                                    >
+                                        <div className="space-y-3">
+                                            <div className="mx-auto w-16 h-16 bg-violet-500/10 rounded-full flex items-center justify-center">
+                                                <svg className="w-8 h-8 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <label htmlFor="cv-file-upload" className="cursor-pointer">
+                                                    <span className="text-violet-400 hover:text-violet-300 font-medium">Click to upload</span>
+                                                    <span className="text-gray-400"> or drag and drop your PDF CV here</span>
+                                                </label>
+                                                <input
+                                                    id="cv-file-upload"
+                                                    type="file"
+                                                    accept=".pdf"
+                                                    onChange={handleFileChange}
+                                                    className="sr-only"
+                                                />
+                                            </div>
+                                            <p className="text-sm text-gray-500">PDF files only (Max 10MB)</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {cvFile && (
+                                        <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-xl border border-gray-600/50">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
+                                                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-200">{cvFile.name}</p>
+                                                    <p className="text-xs text-gray-400">{(cvFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCvFile(null)}
+                                                className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all duration-200"
+                                            >
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <button
