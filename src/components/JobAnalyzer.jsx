@@ -8,56 +8,59 @@ const JobAnalyzer = () => {
     const [dragActive, setDragActive] = useState(false);
     const [loading, setLoading] = useState(false);
     const [analysisResult, setAnalysisResult] = useState(null);
+    const [cvText, setCvText] = useState('');
+    const [jdText, setJdText] = useState('');
+    const [pdfUploading, setPdfUploading] = useState(false);
+    const [uploadedPdfName, setUploadedPdfName] = useState('');
+    const [uploadSuccess, setUploadSuccess] = useState(false);
 
     const handleAnalyze = async () => {
-        if (!url.trim()) {
-            alert('Please provide a job URL or job description');
+        console.log('=== DEBUG START ===');
+        console.log('Raw jdText:', JSON.stringify(jdText));
+        console.log('Raw cvText:', JSON.stringify(cvText));
+        console.log('jdText length:', jdText?.length);
+        console.log('cvText length:', cvText?.length);
+        console.log('jdText trimmed:', jdText?.trim());
+        console.log('cvText trimmed:', cvText?.trim());
+
+        if (!cvText?.trim() || !jdText?.trim()) {
+            console.log('FAILED: Empty fields detected');
+            alert('Please provide both CV and Job Description');
             return;
         }
 
-        if (uploadMode === 'text' && !myCVText.trim()) {
-            alert('Please provide your CV text');
-            return;
-        }
-
-        if (uploadMode === 'file' && !cvFile) {
-            alert('Please upload a PDF CV file');
-            return;
-        }
-
+        console.log('=== SENDING REQUEST ===');
         setLoading(true);
+        setAnalysisResult(null);
 
         try {
-            let response;
-            if (uploadMode === 'text') {
-                response = await fetch('http://127.0.0.1:8000/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        jd_text: url,
-                        cv_text: myCVText
-                    })
-                });
-            } else {
-                const formData = new FormData();
-                formData.append('jd_text', url);
-                formData.append('cv_file', cvFile);
+            const requestBody = {
+                jd_text: jdText.trim(),
+                cv_text: cvText.trim(),
+            };
+            console.log('Request body:', requestBody);
 
-                response = await fetch('http://127.0.0.1:8000/analyze-with-pdf', {
-                    method: 'POST',
-                    body: formData
-                });
-            }
+            const response = await fetch('http://localhost:8000/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody),
+            });
+
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.log('Error response text:', errorText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.json();
-            setAnalysisResult(result);
+            const data = await response.json();
+            console.log('Success response:', data);
+            setAnalysisResult(data);
         } catch (error) {
-            console.error("Error:", error);
-            alert('Error: ' + error.message);
+            console.error('Request failed:', error);
+            alert(`Analysis failed: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -79,13 +82,52 @@ const JobAnalyzer = () => {
         return 'bg-gradient-to-r from-red-500/10 to-pink-500/10 border-red-500/30';
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file && file.type === 'application/pdf') {
-            setCvFile(file);
-        } else {
-            alert("Please select a PDF file.");
-            e.target.value = '';
+    const handleFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Reset previous states
+        setUploadSuccess(false);
+        setUploadedPdfName('');
+        setPdfUploading(true);
+
+        const form = new FormData();
+        form.append('file', file);
+
+        try {
+            const res = await fetch('http://localhost:8000/extract_pdf', {
+                method: 'POST',
+                body: form
+            });
+
+            console.log('extract_pdf status', res.status, res.headers.get('content-type'));
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('extract_pdf failed:', errorText);
+                alert(`PDF upload failed: ${errorText}`);
+                return;
+            }
+
+            const data = await res.json();
+            setCvText(data.text || '');
+
+            // Show success feedback
+            setUploadedPdfName(file.name);
+            setUploadSuccess(true);
+
+            // Auto hide success message after 5 seconds
+            setTimeout(() => {
+                setUploadSuccess(false);
+            }, 5000);
+
+            console.log(`PDF "${file.name}" uploaded successfully, extracted ${data.text?.length || 0} characters`);
+
+        } catch (err) {
+            console.error('extract_pdf error', err);
+            alert(`PDF upload error: ${err.message}`);
+        } finally {
+            setPdfUploading(false);
         }
     };
 
@@ -103,7 +145,7 @@ const JobAnalyzer = () => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-        
+
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             const file = e.dataTransfer.files[0];
             if (file.type === 'application/pdf') {
@@ -113,6 +155,12 @@ const JobAnalyzer = () => {
             }
         }
     };
+    const handleJdChange = (e) => {
+        console.log('JD input changed:', e.target.value);
+        setJdText(e.target.value);
+    };
+
+
 
     const getScoreEmoji = (score) => {
         if (score >= 90) return '🚀';
@@ -150,8 +198,8 @@ const JobAnalyzer = () => {
                             </label>
                             <input
                                 type="text"
-                                value={url}
-                                onChange={(e) => setUrl(e.target.value)}
+                                value={jdText}
+                                onChange={handleJdChange}
                                 placeholder="Paste job URL here (e.g., https://linkedin.com/jobs/...)"
                                 className="w-full p-4 bg-gray-700/50 text-white rounded-xl border border-gray-600/50 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all duration-200 backdrop-blur-sm"
                             />
@@ -164,28 +212,26 @@ const JobAnalyzer = () => {
                                     <span className="ml-2 px-2 py-1 bg-violet-500/20 text-violet-300 text-xs rounded-full">Required</span>
                                 </span>
                             </label>
-                            
+
                             {/* CV Input Mode Toggle */}
                             <div className="flex space-x-2 mb-4">
                                 <button
                                     type="button"
                                     onClick={() => setUploadMode("text")}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                        uploadMode === "text" 
-                                            ? "bg-violet-600 text-white shadow-lg" 
-                                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                    }`}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${uploadMode === "text"
+                                        ? "bg-violet-600 text-white shadow-lg"
+                                        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                        }`}
                                 >
                                     📝 Paste CV Text
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setUploadMode("file")}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                        uploadMode === "file" 
-                                            ? "bg-violet-600 text-white shadow-lg" 
-                                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                    }`}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${uploadMode === "file"
+                                        ? "bg-violet-600 text-white shadow-lg"
+                                        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                        }`}
                                 >
                                     📎 Upload PDF CV
                                 </button>
@@ -194,8 +240,8 @@ const JobAnalyzer = () => {
                             {/* CV Input Area */}
                             {uploadMode === "text" ? (
                                 <textarea
-                                    value={myCVText}
-                                    onChange={(e) => setMyCVText(e.target.value)}
+                                    value={cvText}
+                                    onChange={(e) => setCvText(e.target.value)}
                                     placeholder="Paste your CV/resume content here... Include your skills, experience, education, and key achievements."
                                     rows={10}
                                     className="w-full p-4 bg-gray-700/50 text-white rounded-xl border border-gray-600/50 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all duration-200 resize-none backdrop-blur-sm"
@@ -203,12 +249,11 @@ const JobAnalyzer = () => {
                             ) : (
                                 <div className="space-y-4">
                                     {/* File Upload Drop Zone */}
-                                    <div 
-                                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
-                                            dragActive 
-                                                ? 'border-violet-400 bg-violet-900/20' 
-                                                : 'border-gray-600 bg-gray-800/50 hover:border-violet-500 hover:bg-gray-700/50'
-                                        }`}
+                                    <div
+                                        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${dragActive
+                                            ? 'border-violet-400 bg-violet-900/20'
+                                            : 'border-gray-600 bg-gray-800/50 hover:border-violet-500 hover:bg-gray-700/50'
+                                            }`}
                                         onDragEnter={handleDrag}
                                         onDragLeave={handleDrag}
                                         onDragOver={handleDrag}
@@ -236,8 +281,44 @@ const JobAnalyzer = () => {
                                             <p className="text-sm text-gray-500">PDF files only (Max 10MB)</p>
                                         </div>
                                     </div>
-                                    
-                                    {cvFile && (
+
+                                    {/* PDF Upload Status Feedback */}
+                                    {pdfUploading && (
+                                        <div className="flex items-center justify-center p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="animate-spin w-5 h-5 border-2 border-blue-400/30 border-t-blue-400 rounded-full"></div>
+                                                <span className="text-blue-300 text-sm font-medium">Uploading and processing PDF...</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {uploadSuccess && uploadedPdfName && (
+                                        <div className="flex items-center justify-between p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-xl">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                                                    <svg className="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-emerald-300">✅ PDF uploaded successfully!</p>
+                                                    <p className="text-xs text-emerald-400">{uploadedPdfName}</p>
+                                                    <p className="text-xs text-gray-400">CV text extracted and ready for analysis</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setUploadSuccess(false)}
+                                                className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all duration-200"
+                                            >
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {cvFile && !pdfUploading && !uploadSuccess && (
                                         <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-xl border border-gray-600/50">
                                             <div className="flex items-center space-x-3">
                                                 <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
