@@ -66,7 +66,10 @@ def analyze_job(request: JobRequest):
         result = ai_processor.analyze(request.cv_text, final_jd_text)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"ERROR in analyze_job: {str(e)}")  # Log to console
+        import traceback
+        traceback.print_exc()  # Print full stack trace
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 @app.post("/upload-cv")
 async def upload_cv(cv_file: UploadFile = File(...)):
