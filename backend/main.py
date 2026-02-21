@@ -7,6 +7,7 @@ import json
 import os
 import PyPDF2
 from typing import Optional
+import tempfile
 
 app = FastAPI(title="AI Job Agent Backend", version="1.0.0")
 
@@ -122,3 +123,22 @@ async def analyze_with_pdf(
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/extract_pdf")
+async def extract_pdf(file: UploadFile = File(...)):
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files supported")
+    contents = await file.read()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        tmp.write(contents)
+        tmp_path = tmp.name
+    try:
+        text = extract_text_from_pdf(tmp_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF extraction failed: {str(e)}")
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+    return {"text": text}
