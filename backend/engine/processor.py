@@ -1,14 +1,32 @@
 import os
+import json
 from typing import List
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 
-class JobAnalysis(BaseModel):
-    match_score: int = Field(..., description="Match score from 0 to 100 based on JD requirements")
-    strengths: List[str] = Field(..., description="List of candidate's strengths matching the JD")
-    missing_skills: List[str] = Field(..., description="Key technical/soft skills or tools missing in the CV but required by the JD")
-    summary: str = Field(..., description="A concise summary of 2-3 sentences assessing the fit and giving advice")
+class ScoreBreakdown(BaseModel):
+    technical_skills: int = Field(
+        description="Max 40 points. Score for matching programming languages, frameworks, and tools (e.g., React, Python, FastAPI)."
+    )
+    experience_and_projects: int = Field(
+        description="Max 30 points. Score for relevant project experience, internships, or building core system components."
+    )
+    education_and_soft_skills: int = Field(
+        description="Max 20 points. Score for matching educational background (IT/CS degrees, Master's tracks) and soft skills."
+    )
+    bonus_points: int = Field(
+        description="Max 10 points. Extra points for nice-to-have skills mentioned in the JD (e.g., Gemini API, Cloud, Web scraping)."
+    )
+    total_match_score: int = Field(
+        description="The mathematical sum of technical_skills, experience_and_projects, education_and_soft_skills, and bonus_points. Strictly between 0 and 100."
+    )
+
+class JobAnalysisResponse(BaseModel):
+    score_breakdown: ScoreBreakdown = Field(description="Detailed scoring breakdown based on the 100-point rubric.")
+    strengths: List[str] = Field(description="Key strengths and direct alignments found in the CV.")
+    missing_skills: List[str] = Field(description="Critical technical skills, tools, or domain knowledge missing from the CV.")
+    summary: str = Field(description="A concise summary (2-3 sentences) evaluating the candidate's fit and actionable advice.")
 
 
 class JobProcessor:
@@ -38,8 +56,8 @@ class JobProcessor:
     def analyze(self, cv_text: str, jd_text: str):
         if self.client is None:
             return {
-                "error": f"Google Gen AI SDK is not available in the active Python environment: {self.sdk_error}",
-                "match_score": 0,
+                "error": f"Google Gen AI SDK is not available: {self.sdk_error}",
+                "score_breakdown": {"technical_skills": 0, "experience_and_projects": 0, "education_and_soft_skills": 0, "bonus_points": 0, "total_match_score": 0},
                 "strengths": [],
                 "missing_skills": ["Install google-genai in the active environment"],
                 "summary": "Backend started without the Gemini SDK loaded",
@@ -47,12 +65,37 @@ class JobProcessor:
 
         try:
             prompt = f"""
-You are a Senior Technical Recruiter. Compare the CV and JD provided below.
+You are a Senior Technical Recruiter. Evaluate the candidate's CV against the Job Description (JD) strictly using the 100-point rubric provided below.
 
-## CV (Candidate's Resume)
+### SCORING RUBRIC (Max 100 Points)
+
+1. Technical Skills (Max 40 points):
+   - 40 pts: Matches all core tech stack (e.g., React, Python, FastAPI).
+   - 25-35 pts: Matches major tech stack but misses 1-2 secondary libraries/tools.
+   - <25 pts: Missing core programming languages or critical frameworks required.
+
+2. Experience & Projects (Max 30 points):
+   - 30 pts: Outstanding practical experience, core internship, or independent projects directly matching the role's scope (e.g., building dashboards, AI integrations).
+   - 15-24 pts: Has relevant tech experience but in a slightly different domain.
+   - <15 pts: Little to no practical project experience or relevant professional background.
+
+3. Education & Soft Skills (Max 20 points):
+   - 20 pts: Relevant academic path (e.g., Business IT, Computer Science) or pursuing higher education (Master's track).
+   - 10-15 pts: Non-IT degree but has verified technical certifications/bootcamps.
+
+4. Bonus / Nice-to-have (Max 10 points):
+   - 10 pts: Possesses extra specialized skills listed in the JD (e.g., Google Gemini API, cloud deployment, web scraping/automation).
+
+Calculate each component meticulously and sum them up to populate the `total_match_score`.
+
+---
+
+### INPUT DATA
+
+#### [Candidate CV]
 {cv_text}
 
-## JD (Job Description)
+#### [Job Description]
 {jd_text}
 """
 
@@ -61,18 +104,18 @@ You are a Senior Technical Recruiter. Compare the CV and JD provided below.
                 contents=prompt,
                 config={
                     'response_mime_type': 'application/json',
-                    'response_schema': JobAnalysis,
+                    'response_schema': JobAnalysisResponse,
                     'temperature': 0,
                 },
             )
 
-            return response.parsed.model_dump()
+            return json.loads(response.text)
 
         except Exception as e:
             return {
                 "error": str(e),
-                "match_score": 0,
+                "score_breakdown": {"technical_skills": 0, "experience_and_projects": 0, "education_and_soft_skills": 0, "bonus_points": 0, "total_match_score": 0},
                 "strengths": [],
-                "missing_skills": ["System error"],
-                "summary": "Error during analysis"
+                "missing_skills": ["System error occurred"],
+                "summary": "Error during analysis execution."
             }
