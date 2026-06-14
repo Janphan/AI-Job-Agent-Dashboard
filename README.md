@@ -1,12 +1,12 @@
 
   # AI Job Agent Dashboard
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100.0-green.svg)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-4.0.0-yellow.svg)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.0.0-38B2AC.svg)](https://tailwindcss.com/)
-[![Playwright](https://img.shields.io/badge/Playwright-1.40.0-2E8B57.svg)](https://playwright.dev/)
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-latest-green.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18.3-blue.svg)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-6.3-yellow.svg)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC.svg)](https://tailwindcss.com/)
+[![Playwright](https://img.shields.io/badge/Playwright-1.60-2E8B57.svg)](https://playwright.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 A modern full-stack application for AI-powered job matching with automated job scraping, intelligent analysis using Google Gemini, and an intuitive React dashboard for job seekers.
@@ -72,24 +72,24 @@ The application follows a full-stack architecture with separate backend and fron
 ```
 ai-job-agent/
 ├── backend/                # Python backend with FastAPI
-│   ├── main.py             # Main FastAPI application with routes
+│   ├── main.py             # FastAPI application with routes
 │   ├── engine/             # AI Agent engine
-│   │   ├── scraper.py      # Job scraping logic using Playwright
+│   │   ├── scraper.py      # Job scraping using Playwright
 │   │   ├── processor.py    # AI processing with Gemini API
-│   │   └── utils.py        # PDF reading and text cleaning utilities
-│   ├── data/               # Data storage
-│   │   └── jobs.json       # Job listings storage
+│   │   └── utils.py        # PDF reading and text cleaning
+│   ├── venv/               # Python virtual environment
 │   ├── .env                # Environment variables (GOOGLE_API_KEY)
-│   └── requirements.txt    # Python dependencies
-├── frontend/               # React frontend application
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   │   ├── JobCard.jsx # Job listing card component
-│   │   │   ├── Sidebar.jsx # Application sidebar
-│   │   │   └── AnalysisView.jsx # Job analysis view
-│   │   └── App.jsx         # Main React application
-│   ├── tailwind.config.js  # Tailwind CSS configuration
-│   └── package.json        # Node.js dependencies
+│   ├── requirements.txt    # Python dependencies
+│   └── README.md           # Backend documentation
+├── src/                    # React frontend application
+│   ├── components/         # React components
+│   ├── services/           # API service layer
+│   ├── styles/             # CSS styles
+│   ├── App.jsx             # Main React application
+│   └── main.tsx            # Application entry point
+├── index.html              # HTML entry point
+├── vite.config.ts          # Vite configuration
+├── package.json            # Node.js dependencies
 └── README.md               # Project documentation
 ```
 
@@ -166,12 +166,11 @@ interface Job {
 
 ### Current Status
 - ✅ Frontend: Complete React application with job display
-- ✅ Backend: FastAPI structure defined (implementation pending)
-- ✅ Project structure: Organized into backend/frontend directories
-- ❌ Backend implementation: Needs to be built
-- ❌ API integration: Frontend needs to connect to backend
-- ❌ Job scraping: Playwright scraper needs implementation
-- ❌ AI processing: Gemini API integration needs setup
+- ✅ Backend: FastAPI server running with all endpoints
+- ✅ Job scraping: Playwright-based scraper for job URLs
+- ✅ AI processing: Google Gemini API integration
+- ✅ PDF resume processing and text extraction
+- ✅ API integration: REST endpoints for CV upload and job analysis
 
 ## Deployment
 
@@ -195,22 +194,18 @@ interface Job {
 
 ## Future Improvements
 
-- [ ] Complete backend implementation (FastAPI routes, database integration)
-- [ ] Implement job scraping with Playwright
-- [ ] Integrate Google Gemini API for job analysis
 - [ ] Connect frontend to backend API
 - [ ] Add user authentication and profiles
 - [ ] Implement advanced filtering and search
 - [ ] Add job application tracking
 - [ ] Real-time notifications for new matches
-- [ ] PDF resume processing and analysis
 - [ ] Multi-language support
 - [ ] PWA capabilities for mobile experience
 
 ## Getting Started
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.12+
 - Node.js 18+
 - Google Gemini API key
 
@@ -233,32 +228,26 @@ interface Job {
 
 4. Set up environment variables:
    ```bash
-   cp .env.example .env
-   # Edit .env and add your GOOGLE_API_KEY
+   echo "GOOGLE_API_KEY=your_key_here" > .env
    ```
 
 5. Start the FastAPI server:
    ```bash
-   python main.py
+   uvicorn main:app --reload
    ```
 
 ### Frontend Setup
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install Node.js dependencies:
+1. Install Node.js dependencies:
    ```bash
    npm install
    ```
 
-3. Start the development server:
+2. Start the development server:
    ```bash
    npm run dev
    ```
 
-4. Open [http://localhost:5173](http://localhost:5173) in your browser
+3. Open [http://localhost:5173](http://localhost:5173) in your browser
 
 ### Full Application
 - Backend API will be available at `http://localhost:8000`
