@@ -1,34 +1,28 @@
 # AI Job Agent Backend
 
+Python 3.12+ backend with FastAPI, Playwright scraping, and Google Gemini analysis.
+
 ## Quick Start
 
-Run the FastAPI server:
-```
-uvicorn main:app --reload
-```
-
-Check the API documentation at: http://127.0.0.1:8000/docs
-
-Run in a virtual environment
-```
-# Create a virtual environment (recommended)
+```bash
+# Create and activate virtual environment
 python -m venv venv
-
-# Activate the virtual environment (Git Bash / bash.exe on Windows)
-source venv/Scripts/activate
-
-# On PowerShell (Windows) use:
-# .\venv\Scripts\Activate.ps1
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# The backend now uses the Google Gen AI SDK
-# If you install dependencies manually, the package is `google-genai`
+# Install Playwright browsers
+playwright install
+
+# Set your API key
+echo "GOOGLE_API_KEY=your_key_here" > .env
 
 # Start the server
 uvicorn main:app --reload
 ```
+
+Check the API documentation at: http://127.0.0.1:8000/docs
 
 ## Environment variables / API keys
 

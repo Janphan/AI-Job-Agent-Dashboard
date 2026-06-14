@@ -82,6 +82,14 @@ const JobAnalyzer = () => {
         return 'bg-gradient-to-r from-red-500/10 to-pink-500/10 border-red-500/30';
     };
 
+    const getMatchLabel = (score) => {
+        if (score >= 90) return 'Excellent Match';
+        if (score >= 75) return 'Strong Match';
+        if (score >= 60) return 'Good Match';
+        if (score >= 40) return 'Fair Match';
+        return 'Low Match';
+    };
+
     const handleFileChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -384,25 +392,69 @@ const JobAnalyzer = () => {
                                     </div>
                                 </div>
                             </div>
-                        ) : (
+                        ) : analysisResult.score_breakdown ? (
                             <div className="space-y-8">
-                                {/* Match Score */}
-                                {analysisResult.match_score !== undefined && (
-                                    <div className={`p-6 rounded-xl border backdrop-blur-sm ${getMatchScoreBg(analysisResult.match_score)}`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-3">
-                                                <span className="text-3xl">{getScoreEmoji(analysisResult.match_score)}</span>
-                                                <div>
-                                                    <h3 className="text-xl font-semibold text-white">Match Score</h3>
-                                                    <p className="text-gray-400 text-sm">How well your CV aligns with the job</p>
+                                {/* Total Match Score */}
+                                {(() => {
+                                    const score = analysisResult.score_breakdown.total_match_score;
+                                    const filled = Math.round(score / 10);
+                                    const dots = '🔵'.repeat(filled) + '░░'.repeat(10 - filled);
+                                    return (
+                                        <div className={`p-6 rounded-xl border backdrop-blur-sm ${getMatchScoreBg(score)}`}>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="text-3xl">{getScoreEmoji(score)}</span>
+                                                    <div>
+                                                        <h3 className="text-xl font-semibold text-white">Total Match Score</h3>
+                                                        <p className="text-gray-400 text-sm">{getMatchLabel(score)}</p>
+                                                    </div>
+                                                </div>
+                                                <div className={`text-5xl font-bold ${getMatchScoreColor(score)}`}>
+                                                    {score}%
                                                 </div>
                                             </div>
-                                            <div className={`text-5xl font-bold ${getMatchScoreColor(analysisResult.match_score)}`}>
-                                                {analysisResult.match_score}%
-                                            </div>
+                                            <div className="text-lg tracking-wider">{dots}</div>
                                         </div>
+                                    );
+                                })()}
+
+                                {/* Score Breakdown */}
+                                <div className="bg-gray-900/50 border border-gray-700/50 p-6 rounded-xl backdrop-blur-sm">
+                                    <h3 className="text-lg font-semibold text-white mb-6 flex items-center">
+                                        <span className="mr-2">📊</span>
+                                        Score Breakdown
+                                    </h3>
+                                    <div className="space-y-5">
+                                        {[
+                                            { key: 'technical_skills', icon: '🛠️', label: 'Technical Skills', max: 40 },
+                                            { key: 'experience_and_projects', icon: '💼', label: 'Experience & Projects', max: 30 },
+                                            { key: 'education_and_soft_skills', icon: '🎓', label: 'Education & Soft Skills', max: 20 },
+                                            { key: 'bonus_points', icon: '🚀', label: 'Bonus / Nice-to-have', max: 10 },
+                                        ].map(({ key, icon, label, max }) => {
+                                            const val = analysisResult.score_breakdown[key] || 0;
+                                            const pct = Math.round((val / max) * 100);
+                                            return (
+                                                <div key={key}>
+                                                    <div className="flex items-center justify-between mb-1.5">
+                                                        <span className="text-gray-300 text-sm flex items-center">
+                                                            <span className="mr-2">{icon}</span>
+                                                            {label}
+                                                        </span>
+                                                        <span className="text-white font-semibold tabular-nums">
+                                                            {val} / {max}
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-700 rounded-full h-2.5">
+                                                        <div
+                                                            className={`h-2.5 rounded-full transition-all duration-500 ${val >= max ? 'bg-emerald-500' : val >= max * 0.75 ? 'bg-cyan-500' : val >= max * 0.5 ? 'bg-violet-500' : val >= max * 0.25 ? 'bg-amber-500' : 'bg-red-500'}`}
+                                                            style={{ width: `${pct}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                )}
+                                </div>
 
                                 {/* Strengths */}
                                 {analysisResult.strengths && analysisResult.strengths.length > 0 && (
@@ -455,7 +507,7 @@ const JobAnalyzer = () => {
                                     </div>
                                 )}
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 )}
 

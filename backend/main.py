@@ -49,26 +49,30 @@ async def root():
 
 @app.post("/analyze")
 def analyze_job(request: JobRequest):
+    final_jd_text = request.jd_text
+
+    if request.jd_text.startswith(("http://", "https://")):
+        scraped_content = scraper.scrape_url(request.jd_text)
+        if not scraped_content:
+            raise HTTPException(status_code=400, detail="Failed to scrape content.")
+        if scraper.is_blocked(scraped_content):
+            raise HTTPException(
+                status_code=400,
+                detail="This site blocked the scraper. Please paste the job description text directly instead of a URL."
+            )
+        final_jd_text = scraped_content
+
+    print("--- DEBUG: JD CONTENT START ---")
+    print(final_jd_text[:1000])
+    print("--- DEBUG: JD CONTENT END ---")
+
     try:
-        final_jd_text = request.jd_text
-        
-        if request.jd_text.startswith(("http://", "https://")):
-            # Now the Playwright Sync API will run smoothly
-            scraped_content = scraper.scrape_url(request.jd_text)
-            if not scraped_content:
-                raise HTTPException(status_code=400, detail="Failed to scrape content.")
-            final_jd_text = scraped_content
-
-        print("--- DEBUG: JD CONTENT START ---")
-        print(final_jd_text[:1000])  # Print first 1000 characters to console
-        print("--- DEBUG: JD CONTENT END ---")
-
         result = ai_processor.analyze(request.cv_text, final_jd_text)
         return result
     except Exception as e:
-        print(f"ERROR in analyze_job: {str(e)}")  # Log to console
+        print(f"ERROR in analyze_job: {str(e)}")
         import traceback
-        traceback.print_exc()  # Print full stack trace
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 @app.post("/upload-cv")
@@ -101,27 +105,25 @@ async def analyze_with_pdf(
     if not cv_file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
     
+    cv_text = extract_text_from_pdf(cv_file.file)
+
+    final_jd_text = jd_text
+
+    if jd_text.startswith(("http://", "https://")):
+        scraped_content = scraper.scrape_url(jd_text)
+        if not scraped_content:
+            raise HTTPException(status_code=400, detail="Failed to scrape job description.")
+        final_jd_text = scraped_content
+
+    print("--- DEBUG: JD CONTENT START ---")
+    print(final_jd_text[:1000])
+    print("--- DEBUG: JD CONTENT END ---")
+
+    print("--- DEBUG: CV CONTENT START ---")
+    print(cv_text[:500])
+    print("--- DEBUG: CV CONTENT END ---")
+
     try:
-        # Extract text from uploaded PDF
-        cv_text = extract_text_from_pdf(cv_file.file)
-        
-        final_jd_text = jd_text
-        
-        if jd_text.startswith(("http://", "https://")):
-            # Scrape job description from URL
-            scraped_content = scraper.scrape_url(jd_text)
-            if not scraped_content:
-                raise HTTPException(status_code=400, detail="Failed to scrape job description.")
-            final_jd_text = scraped_content
-
-        print("--- DEBUG: JD CONTENT START ---")
-        print(final_jd_text[:1000])
-        print("--- DEBUG: JD CONTENT END ---")
-        
-        print("--- DEBUG: CV CONTENT START ---")
-        print(cv_text[:500])
-        print("--- DEBUG: CV CONTENT END ---")
-
         result = ai_processor.analyze(cv_text, final_jd_text)
         return result
     except Exception as e:
@@ -145,3 +147,7 @@ async def extract_pdf(file: UploadFile = File(...)):
         except OSError:
             pass
     return {"text": text}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
