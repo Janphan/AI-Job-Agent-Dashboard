@@ -14,7 +14,11 @@ app = FastAPI(title="AI Job Agent Backend", version="1.0.0")
 # CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # React dev server
+    allow_origins=[
+        "http://localhost:5173",
+        "https://ai-job-agent-dashboard.fly.dev",
+        "https://backend-ai-job-agent-dashboard.fly.dev",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

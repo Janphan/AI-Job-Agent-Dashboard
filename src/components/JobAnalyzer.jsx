@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const JobAnalyzer = () => {
     const [url, setUrl] = useState('');
@@ -40,7 +41,7 @@ const JobAnalyzer = () => {
             };
             console.log('Request body:', requestBody);
 
-            const response = await fetch('http://localhost:8000/analyze', {
+            const response = await fetch(`${API_BASE_URL}/analyze`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestBody),
@@ -103,7 +104,7 @@ const JobAnalyzer = () => {
         form.append('file', file);
 
         try {
-            const res = await fetch('http://localhost:8000/extract_pdf', {
+            const res = await fetch(`${API_BASE_URL}/extract_pdf`, {
                 method: 'POST',
                 body: form
             });
