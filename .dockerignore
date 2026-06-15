@@ -1,0 +1,7 @@
+fly.toml
+node_modules/
+.git/
+dist/
+*.md
+.gitignore
+
