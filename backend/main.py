@@ -9,10 +9,12 @@ import os
 import PyPDF2
 from typing import Optional
 import tempfile
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from database import get_db, Base, engine
 from models import Job, Analysis
-
 app = FastAPI(title="AI Job Agent Backend", version="1.0.0")
 
 # CORS middleware for frontend integration
@@ -58,15 +60,16 @@ Base.metadata.create_all(bind=engine)
 async def root():
     return {"message": "AI Job Agent Backend API"}
 
+
 @app.post("/analyze")
 def analyze_job(request: JobRequest, db: Session = Depends(get_db)):
     final_jd_text = request.jd_text
     url = request.jd_text if request.jd_text.startswith(("http://", "https://")) else None
 
     if url:
-        scraped_content = scraper.scrape_url(request.jd_text)
+        scraped_content = scraper.scrape_url(url)
         if not scraped_content:
-            raise HTTPException(status_code=400, detail="Failed to scrape content.")
+            raise HTTPException(status_code=400, detail="Failed to scrape content from URL. Please paste the job description text directly instead.")
         if scraper.is_blocked(scraped_content):
             raise HTTPException(
                 status_code=400,
@@ -91,6 +94,9 @@ def analyze_job(request: JobRequest, db: Session = Depends(get_db)):
 
     job = Job(
         url=url or "",
+        title=result.get("job_title"),
+        company=result.get("company"),
+        location=result.get("location"),
         key_requirements=json.dumps(result.get("missing_skills", [])),
     )
     db.add(job)
@@ -114,6 +120,9 @@ def analyze_job(request: JobRequest, db: Session = Depends(get_db)):
     return {
         "id": job.id,
         "analysis_id": analysis.id,
+        "title": job.title,
+        "company": job.company,
+        "location": job.location,
         "url": job.url,
         "date": job.created_at.isoformat() if job.created_at else None,
         "score_breakdown": score_breakdown,
@@ -133,6 +142,7 @@ def list_jobs(db: Session = Depends(get_db)):
             "url": job.url,
             "title": job.title,
             "company": job.company,
+            "location": job.location,
             "key_requirements": json.loads(job.key_requirements) if job.key_requirements else [],
             "date": job.created_at.isoformat() if job.created_at else None,
             "analysis": {
@@ -161,6 +171,7 @@ def get_job(job_id: int, db: Session = Depends(get_db)):
         "url": job.url,
         "title": job.title,
         "company": job.company,
+        "location": job.location,
         "key_requirements": json.loads(job.key_requirements) if job.key_requirements else [],
         "date": job.created_at.isoformat() if job.created_at else None,
         "analyses": [
