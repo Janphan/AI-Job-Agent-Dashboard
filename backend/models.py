@@ -12,6 +12,7 @@ class Job(Base):
     url = Column(String, nullable=False)
     title = Column(String, nullable=True)
     company = Column(String, nullable=True)
+    location = Column(String, nullable=True)
     key_requirements = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-const AddJobModal = ({ cvText, onCvTextChange, onClose, onJobAdded }) => {
-    const [url, setUrl] = useState('');
+const AddJobModal = ({ cvText, onCvTextChange, onClose, onJobAdded, prefilledUrl = '' }) => {
+    const [url, setUrl] = useState(prefilledUrl);
     const [localCvText, setLocalCvText] = useState(cvText || '');
     const [cvFile, setCvFile] = useState(null);
     const [uploadMode, setUploadMode] = useState('text');

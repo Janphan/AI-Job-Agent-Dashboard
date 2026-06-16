@@ -23,6 +23,9 @@ class ScoreBreakdown(BaseModel):
     )
 
 class JobAnalysisResponse(BaseModel):
+    job_title: str = Field(description="Job title extracted from the job description (e.g. 'IT-harjoittelija', 'Frontend Developer')")
+    company: str = Field(description="Company name extracted from the job description (e.g. 'Talenom Oyj')")
+    location: str = Field(description="Job location extracted from the job description (e.g. 'Oulu, Finland')")
     score_breakdown: ScoreBreakdown = Field(description="Detailed scoring breakdown based on the 100-point rubric.")
     strengths: List[str] = Field(description="Key strengths and direct alignments found in the CV.")
     missing_skills: List[str] = Field(description="Critical technical skills, tools, or domain knowledge missing from the CV.")
@@ -57,6 +60,9 @@ class JobProcessor:
         if self.client is None:
             return {
                 "error": f"Google Gen AI SDK is not available: {self.sdk_error}",
+                "job_title": "",
+                "company": "",
+                "location": "",
                 "score_breakdown": {"technical_skills": 0, "experience_and_projects": 0, "education_and_soft_skills": 0, "bonus_points": 0, "total_match_score": 0},
                 "strengths": [],
                 "missing_skills": ["Install google-genai in the active environment"],
@@ -99,21 +105,31 @@ Calculate each component meticulously and sum them up to populate the `total_mat
 {jd_text}
 """
 
-            response = self.client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-                config={
-                    'response_mime_type': 'application/json',
-                    'response_schema': JobAnalysisResponse,
-                    'temperature': 0,
-                },
-            )
-
-            return json.loads(response.text)
+            models_to_try = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash']
+            last_error = None
+            for model_name in models_to_try:
+                try:
+                    response = self.client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config={
+                            'response_mime_type': 'application/json',
+                            'response_schema': JobAnalysisResponse,
+                            'temperature': 0,
+                        },
+                    )
+                    return json.loads(response.text)
+                except Exception as e:
+                    last_error = e
+                    continue
+            raise last_error
 
         except Exception as e:
             return {
                 "error": str(e),
+                "job_title": "",
+                "company": "",
+                "location": "",
                 "score_breakdown": {"technical_skills": 0, "experience_and_projects": 0, "education_and_soft_skills": 0, "bonus_points": 0, "total_match_score": 0},
                 "strengths": [],
                 "missing_skills": ["System error occurred"],
