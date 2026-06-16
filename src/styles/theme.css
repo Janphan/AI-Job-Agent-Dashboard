@@ -39,6 +39,62 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* ============================================
+     Semantic design tokens (app-specific)
+     ============================================ */
+  /* Surface hierarchy */
+  --surface-page: #0f0a1e;
+  --surface-card: #1e1b2e;
+  --surface-card-hover: #26223a;
+  --surface-modal: #1e1b2e;
+  --surface-elevated: #2a2640;
+  --surface-input: #1e1b2e;
+
+  /* Text hierarchy */
+  --text-heading: #f1f5f9;
+  --text-body: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-placeholder: #64748b;
+
+  /* Interactive */
+  --interactive-primary: #7c3aed;
+  --interactive-primary-hover: #8b5cf6;
+  --interactive-primary-muted: rgba(124, 58, 237, 0.15);
+  --interactive-ghost-hover: rgba(255, 255, 255, 0.06);
+
+  /* Accent gradient */
+  --gradient-primary: linear-gradient(135deg, #7c3aed, #9333ea);
+  --gradient-page: linear-gradient(135deg, #0f0a1e, rgba(88, 28, 135, 0.15), rgba(76, 29, 149, 0.25));
+
+  /* Status / feedback */
+  --status-success: #34d399;
+  --status-success-bg: rgba(52, 211, 153, 0.1);
+  --status-success-border: rgba(52, 211, 153, 0.3);
+  --status-warning: #fbbf24;
+  --status-warning-bg: rgba(251, 191, 36, 0.1);
+  --status-warning-border: rgba(251, 191, 36, 0.3);
+  --status-error: #f87171;
+  --status-error-bg: rgba(248, 113, 113, 0.1);
+  --status-error-border: rgba(248, 113, 113, 0.3);
+  --status-info: #60a5fa;
+  --status-info-bg: rgba(96, 165, 250, 0.1);
+  --status-info-border: rgba(96, 165, 250, 0.3);
+
+  /* Match score colors (in order: excellent → low) */
+  --score-1: #34d399;
+  --score-2: #22d3ee;
+  --score-3: #a78bfa;
+  --score-4: #fbbf24;
+  --score-5: #f87171;
+
+  /* Borders */
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-active: #7c3aed;
+
+  /* Focus ring */
+  --focus-ring: rgba(124, 58, 237, 0.4);
 }
 
 .dark {
@@ -117,6 +173,58 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ============================================
+     App-specific design tokens
+     ============================================ */
+  /* Surface */
+  --color-surface-page: var(--surface-page);
+  --color-surface-card: var(--surface-card);
+  --color-surface-card-hover: var(--surface-card-hover);
+  --color-surface-modal: var(--surface-modal);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-input: var(--surface-input);
+
+  /* Text */
+  --color-text-heading: var(--text-heading);
+  --color-text-body: var(--text-body);
+  --color-text-muted: var(--text-muted);
+  --color-text-placeholder: var(--text-placeholder);
+
+  /* Interactive */
+  --color-interactive-primary: var(--interactive-primary);
+  --color-interactive-primary-hover: var(--interactive-primary-hover);
+  --color-interactive-primary-muted: var(--interactive-primary-muted);
+  --color-interactive-ghost-hover: var(--interactive-ghost-hover);
+
+  /* Status */
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-error: var(--status-error);
+  --color-status-info: var(--status-info);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-error-bg: var(--status-error-bg);
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-success-border: var(--status-success-border);
+  --color-status-warning-border: var(--status-warning-border);
+  --color-status-error-border: var(--status-error-border);
+  --color-status-info-border: var(--status-info-border);
+
+  /* Score */
+  --color-score-excellent: var(--score-1);
+  --color-score-strong: var(--score-2);
+  --color-score-good: var(--score-3);
+  --color-score-fair: var(--score-4);
+  --color-score-low: var(--score-5);
+
+  /* Border */
+  --color-border-default: var(--border-default);
+  --color-border-hover: var(--border-hover);
+  --color-border-active: var(--border-active);
+
+  /* Focus */
+  --color-focus-ring: var(--focus-ring);
 }
 
 @layer base {
