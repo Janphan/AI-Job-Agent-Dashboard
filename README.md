@@ -174,12 +174,7 @@ interface Job {
 
 ## Deployment
 
-The project is deployed on **Fly.io** with two separate apps:
-
-| App | URL |
-|-----|-----|
-| Frontend | [ai-job-agent-dashboard.fly.dev](https://ai-job-agent-dashboard.fly.dev) |
-| Backend | [backend-ai-job-agent-dashboard.fly.dev](https://backend-ai-job-agent-dashboard.fly.dev) |
+The project is deployed on **Fly.io** with two separate apps (frontend & backend).
 
 ### GitHub Actions (CI/CD)
 
