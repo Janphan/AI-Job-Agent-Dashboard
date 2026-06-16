@@ -239,6 +239,34 @@ const JobAnalyzer = () => {
                         {selectedJob ? 'Analysis Results' : 'Job Feed — your analyzed jobs'}
                     </p>
                 </div>
+                <div className="flex flex-col items-end shrink-0">
+                    <span className={`text-3xl font-bold ${getMatchScoreColor(score)}`}>
+                        {score}%
+                    </span>
+                    <span className="text-xs text-text-placeholder mt-0.5">{getMatchLabel(score)}</span>
+                </div>
+            </div>
+        </button>
+    );
+}
+
+function DetailView({ job, onBack }) {
+    const score = job.score_breakdown?.total_match_score ?? 0;
+    const dots = '🔵'.repeat(Math.round(score / 10)) + '░░'.repeat(10 - Math.round(score / 10));
+
+    if (!job.score_breakdown) {
+        return (
+            <div className="bg-surface-card border border-border-default rounded-2xl p-8 shadow-2xl">
+                <button onClick={onBack} className="flex items-center text-text-muted hover:text-text-heading transition-colors mb-6">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to Feed
+                </button>
+                <p className="text-text-muted text-center py-8">No analysis data available for this job.</p>
+            </div>
+        );
+    }
 
                 {selectedJob ? (
                     <DetailView job={selectedJob} onBack={() => setSelectedJob(null)} />
@@ -262,6 +290,82 @@ const JobAnalyzer = () => {
             <button
                 onClick={() => setShowModal(true)}
                 className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-full shadow-2xl hover:shadow-violet-500/40 flex items-center justify-center text-3xl transition-all duration-200 hover:scale-110 z-40"
+            >
+                +
+            </button>
+
+            {showModal && (
+                <AddJobModal
+                    cvText={cvText}
+                    onCvTextChange={setCvText}
+                    onClose={() => setShowModal(false)}
+                    onJobAdded={handleJobAdded}
+                />
+            )}
+        </div>
+    );
+}
+
+const JobAnalyzer = () => {
+    const [jobs, setJobs] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('jobs') || '[]'); } catch { return []; }
+    });
+    const [cvText, setCvText] = useState(() => localStorage.getItem('cvText') || '');
+    const [selectedJob, setSelectedJob] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+
+    useEffect(() => {
+        localStorage.setItem('jobs', JSON.stringify(jobs));
+    }, [jobs]);
+
+    useEffect(() => {
+        localStorage.setItem('cvText', cvText);
+    }, [cvText]);
+
+    const handleJobAdded = (data) => {
+        const newJob = {
+            id: Date.now().toString(),
+            date: new Date().toISOString(),
+            ...data,
+        };
+        setJobs((prev) => [newJob, ...prev]);
+        setSelectedJob(newJob);
+    };
+
+    return (
+        <div className="min-h-screen bg-surface-page">
+            <div className="container mx-auto px-4 py-8 max-w-5xl">
+                <div className="text-center mb-8">
+                    <h1 className="text-4xl font-bold text-text-heading mb-4 bg-gradient-to-r from-interactive-primary to-purple-400 bg-clip-text text-transparent">
+                        🤖 AI Job Analyzer
+                    </h1>
+                    <p className="text-text-muted text-lg">
+                        {selectedJob ? 'Analysis Results' : 'Job Feed — your analyzed jobs'}
+                    </p>
+                </div>
+
+                {selectedJob ? (
+                    <DetailView job={selectedJob} onBack={() => setSelectedJob(null)} />
+                ) : jobs.length === 0 ? (
+                    <div className="bg-surface-card border border-border-default rounded-2xl p-16 shadow-2xl text-center">
+                        <div className="text-6xl mb-6">📋</div>
+                        <h2 className="text-2xl font-semibold text-text-heading mb-3">No jobs analyzed yet</h2>
+                        <p className="text-text-muted mb-8 max-w-md mx-auto">
+                            Tap the <span className="text-interactive-primary">+</span> button below to add a job URL and analyze it against your CV.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {jobs.map((job) => (
+                            <JobCard key={job.id} job={job} onClick={() => setSelectedJob(job)} />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <button
+                onClick={() => setShowModal(true)}
+                className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-r from-interactive-primary to-purple-600 hover:from-interactive-primary-hover hover:to-purple-500 text-text-heading rounded-full shadow-2xl hover:shadow-interactive-primary/40 flex items-center justify-center text-3xl transition-all duration-200 hover:scale-110 z-40"
             >
                 +
             </button>
