@@ -169,6 +169,60 @@ function DetailModal({ job, onClose, onDelete }) {
                             <div className="text-lg tracking-wider">{dots}</div>
                         </div>
 
+                        {(() => {
+                            const langReqs = job.language_requirements || job.score_breakdown?.language_requirements || [];
+                            if (langReqs.length === 0) return null;
+                            return (
+                                <div className="bg-surface-input border border-cyan-500/30 p-6 rounded-xl">
+                                    <h3 className="text-lg font-semibold text-cyan-400 mb-6 flex items-center">
+                                        <span className="mr-2">🌐</span>Language Requirements
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {langReqs.map((lang, i) => (
+                                            <div key={i} className="flex items-center justify-between bg-surface-elevated p-3 rounded-lg">
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="text-text-heading font-medium">{lang.language}</span>
+                                                    <span className={`text-xs px-2 py-0.5 rounded-full ${lang.is_required ? 'bg-red-900/30 text-red-300' : 'bg-gray-700 text-text-muted'}`}>
+                                                        {lang.is_required ? 'Required' : 'Nice to have'}
+                                                    </span>
+                                                    <span className="text-text-muted text-sm">{lang.level}</span>
+                                                </div>
+                                                <span className={lang.candidate_has ? 'text-status-success font-medium' : 'text-status-error font-medium'}>
+                                                    {lang.candidate_has ? '✅ Met' : '❌ Not met'}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {(() => {
+                            const yrsRequired = job.years_of_experience_required ?? job.score_breakdown?.years_of_experience_required ?? 0;
+                            const yrsCandidate = job.candidate_years_of_experience ?? job.score_breakdown?.candidate_years_of_experience ?? 0;
+                            if (!yrsRequired) return null;
+                            return (
+                                <div className="bg-surface-input border border-border-default p-6 rounded-xl">
+                                    <h3 className="text-lg font-semibold text-text-heading mb-4 flex items-center">
+                                        <span className="mr-2">📅</span>Experience Match
+                                    </h3>
+                                    <div className="flex items-center space-x-6">
+                                        <div className="text-center">
+                                            <div className="text-2xl font-bold text-cyan-400">{yrsRequired}</div>
+                                            <div className="text-text-muted text-sm">Years Required</div>
+                                        </div>
+                                        <div className="text-text-muted text-2xl">→</div>
+                                        <div className="text-center">
+                                            <div className={`text-2xl font-bold ${yrsCandidate >= yrsRequired ? 'text-status-success' : 'text-amber-400'}`}>
+                                                {yrsCandidate}
+                                            </div>
+                                            <div className="text-text-muted text-sm">Your Experience</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
                         <div className="bg-surface-input border border-border-default p-6 rounded-xl">
                             <h3 className="text-lg font-semibold text-text-heading mb-6 flex items-center">
                                 <span className="mr-2">📊</span>Score Breakdown
