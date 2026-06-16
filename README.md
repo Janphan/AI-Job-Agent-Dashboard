@@ -174,23 +174,38 @@ interface Job {
 
 ## Deployment
 
-### Backend Deployment
-1. Set up Python environment on your server
-2. Install dependencies: `pip install -r requirements.txt`
-3. Configure environment variables (API keys)
-4. Run the FastAPI server: `python main.py`
-5. The API will be available on the configured port (default: 8000)
+The project is deployed on **Fly.io** with two separate apps (frontend & backend).
 
-### Frontend Deployment
-1. Build the React application: `npm run build`
-2. The built files will be in the `dist/` directory
-3. Deploy the contents of `dist/` to any static hosting service
-4. Configure the frontend to point to your backend API URL
+### GitHub Actions (CI/CD)
 
-### Full Stack Deployment
-- Backend can be deployed to services like Railway, Render, or Heroku
-- Frontend can be deployed to Netlify, Vercel, or GitHub Pages
-- Ensure CORS is properly configured for cross-origin requests
+On every push to `main` or `enhancement`, the workflow `.github/workflows/fly-deploy.yml` automatically deploys both apps:
+
+- **Deploy frontend** — builds and deploys from the root `Dockerfile` and `fly.toml`
+- **Deploy Backend to Fly.io** — builds and deploys from `backend/Dockerfile` and `backend/fly.toml`
+
+#### Required GitHub Secrets
+
+| Secret | Value |
+|--------|-------|
+| `FLY_API_TOKEN` | Fly.io deploy token |
+
+To create the token:
+```bash
+flyctl auth login           # Login via browser
+flyctl auth token           # Print token to copy
+```
+
+Then add it at: GitHub repo → Settings → Secrets and variables → Actions → **New repository secret** → Name: `FLY_API_TOKEN`
+
+### Manual Deploy
+
+```bash
+# Frontend
+flyctl deploy --remote-only
+
+# Backend
+flyctl deploy --remote-only --config backend/fly.toml backend/
+```
 
 ## Future Improvements
 
