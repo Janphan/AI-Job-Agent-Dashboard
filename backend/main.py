@@ -21,7 +21,7 @@ app = FastAPI(title="AI Job Agent Backend", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
+        "http://0.0.0.0:5173",
         "https://ai-job-agent-dashboard.fly.dev",
         "https://backend-ai-job-agent-dashboard.fly.dev",
     ],
@@ -102,10 +102,15 @@ def analyze_job(request: JobRequest, db: Session = Depends(get_db)):
     db.add(job)
     db.flush()
 
+    stored_breakdown = score_breakdown.copy() if isinstance(score_breakdown, dict) else {}
+    stored_breakdown["language_requirements"] = result.get("language_requirements", [])
+    stored_breakdown["years_of_experience_required"] = result.get("years_of_experience_required", 0)
+    stored_breakdown["candidate_years_of_experience"] = result.get("candidate_years_of_experience", 0)
+
     analysis = Analysis(
         job_id=job.id,
         total_score=total_score,
-        score_breakdown=json.dumps(score_breakdown) if isinstance(score_breakdown, dict) else None,
+        score_breakdown=json.dumps(stored_breakdown),
         strengths=json.dumps(result.get("strengths", [])),
         missing_skills=json.dumps(result.get("missing_skills", [])),
         summary=result.get("summary"),
@@ -129,6 +134,9 @@ def analyze_job(request: JobRequest, db: Session = Depends(get_db)):
         "strengths": result.get("strengths", []),
         "missing_skills": result.get("missing_skills", []),
         "summary": result.get("summary"),
+        "language_requirements": result.get("language_requirements", []),
+        "years_of_experience_required": result.get("years_of_experience_required", 0),
+        "candidate_years_of_experience": result.get("candidate_years_of_experience", 0),
     }
 
 @app.get("/jobs")
@@ -153,6 +161,9 @@ def list_jobs(db: Session = Depends(get_db)):
                 "missing_skills": json.loads(analysis.missing_skills) if analysis and analysis.missing_skills else [],
                 "summary": analysis.summary if analysis else None,
                 "status": analysis.status if analysis else None,
+                "language_requirements": json.loads(analysis.score_breakdown).get("language_requirements", []) if analysis and analysis.score_breakdown else [],
+                "years_of_experience_required": json.loads(analysis.score_breakdown).get("years_of_experience_required", 0) if analysis and analysis.score_breakdown else 0,
+                "candidate_years_of_experience": json.loads(analysis.score_breakdown).get("candidate_years_of_experience", 0) if analysis and analysis.score_breakdown else 0,
             } if analysis else None,
         })
     return result
@@ -184,6 +195,9 @@ def get_job(job_id: int, db: Session = Depends(get_db)):
                 "summary": a.summary,
                 "status": a.status,
                 "created_at": a.created_at.isoformat() if a.created_at else None,
+                "language_requirements": json.loads(a.score_breakdown).get("language_requirements", []) if a.score_breakdown else [],
+                "years_of_experience_required": json.loads(a.score_breakdown).get("years_of_experience_required", 0) if a.score_breakdown else 0,
+                "candidate_years_of_experience": json.loads(a.score_breakdown).get("candidate_years_of_experience", 0) if a.score_breakdown else 0,
             }
             for a in analyses
         ],
@@ -290,4 +304,4 @@ async def extract_pdf(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -131,6 +131,55 @@ const JobDetail = ({ job }) => {
                         );
                     })()}
 
+                    {/* Years of Experience */}
+                    {analysis.years_of_experience_required !== undefined && analysis.years_of_experience_required > 0 && (
+                        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                                <span className="mr-2 text-xl">📅</span>
+                                Experience Match
+                            </h3>
+                            <div className="flex items-center space-x-6">
+                                <div className="text-center">
+                                    <div className="text-2xl font-bold text-cyan-400">{analysis.years_of_experience_required}</div>
+                                    <div className="text-gray-400 text-sm">Years Required</div>
+                                </div>
+                                <div className="text-gray-500 text-2xl">→</div>
+                                <div className="text-center">
+                                    <div className={`text-2xl font-bold ${analysis.candidate_years_of_experience >= analysis.years_of_experience_required ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                        {analysis.candidate_years_of_experience}
+                                    </div>
+                                    <div className="text-gray-400 text-sm">Your Experience</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Language Requirements */}
+                    {analysis.language_requirements?.length > 0 && (
+                        <div className="bg-gray-800 p-6 rounded-lg border border-cyan-500/30">
+                            <h3 className="text-lg font-semibold text-cyan-400 mb-4 flex items-center">
+                                <span className="mr-2 text-xl">🌐</span>
+                                Language Requirements
+                            </h3>
+                            <div className="space-y-3">
+                                {analysis.language_requirements.map((lang, i) => (
+                                    <div key={i} className="flex items-center justify-between bg-gray-750 p-3 rounded-lg">
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-white font-medium">{lang.language}</span>
+                                            <span className={`text-xs px-2 py-0.5 rounded-full ${lang.is_required ? 'bg-red-600/20 text-red-300' : 'bg-gray-600/30 text-gray-300'}`}>
+                                                {lang.is_required ? 'Required' : 'Nice to have'}
+                                            </span>
+                                            <span className="text-gray-400 text-sm">{lang.level}</span>
+                                        </div>
+                                        <span className={lang.candidate_has ? 'text-emerald-400 font-medium' : 'text-red-400 font-medium'}>
+                                            {lang.candidate_has ? '✅ Met' : '❌ Not met'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Score Breakdown */}
                     <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
                         <h3 className="text-lg font-semibold text-white mb-5 flex items-center">

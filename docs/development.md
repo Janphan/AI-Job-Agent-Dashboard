@@ -41,3 +41,11 @@
 - `curious_coder/linkedin-jobs-scraper` has rich output fields vs `scrapier` actor
 - Gemini 2.5-flash-lite: faster, cheaper, good enough for JD extraction
 - Pydantic schema change + new DB column = delete `backend/data/analyses.db` to recreate
+- `LanguageRequirement` nested model: use `List[BaseModel]` for structured arrays instead of flat strings
+- Pydantic v2: use `@field_validator` (not the old `@validator`)
+- Prompt engineering: include **negative constraints** (e.g. "do NOT score language") — LLMs will implicitly penalize without explicit prohibition
+- No DB migration needed: store new fields inside existing `score_breakdown` JSON column; merge into dict before `json.dumps()`
+- Always `dict.copy()` before mutating to avoid aliasing bugs in reference-passed objects
+- Frontend data flow: `backend response → AddJobModal → handleJobAdded → state/localStorage → DetailModal` — trace the full chain to know where fields live
+- Use safe fallback chain for optional fields: `job.x ?? job.score_breakdown?.x ?? defaultValue`
+- Supabase free tier: requires `sslmode=require`; Fly.io 256MB RAM is insufficient for PG17 (OOM-kill loop)
