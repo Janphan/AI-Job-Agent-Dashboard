@@ -21,7 +21,7 @@ app = FastAPI(title="AI Job Agent Backend", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
+        "http://0.0.0.0:5173",
         "https://ai-job-agent-dashboard.fly.dev",
         "https://backend-ai-job-agent-dashboard.fly.dev",
     ],
@@ -304,4 +304,4 @@ async def extract_pdf(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
