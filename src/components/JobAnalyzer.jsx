@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AddJobModal from './AddJobModal';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://0.0.0.0:8000';
 
 const getMatchScoreColor = (score) => {
     if (score >= 90) return 'text-score-excellent';
