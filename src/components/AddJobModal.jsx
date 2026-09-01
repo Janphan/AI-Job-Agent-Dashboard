@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://0.0.0.0:8000';
 
 const AddJobModal = ({ cvText, onCvTextChange, onClose, onJobAdded, prefilledUrl = '' }) => {
     const [url, setUrl] = useState(prefilledUrl);

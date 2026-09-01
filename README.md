@@ -98,7 +98,7 @@ echo "GEMINI_API_KEY=your_key_here" > .env
 venv/bin/uvicorn main:app --reload --port 8000
 ```
 
-API docs available at `http://localhost:8000/docs`.
+API docs available at `http://0.0.0.0:8000/docs`.
 
 ### Frontend Setup
 
@@ -108,7 +108,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` — both servers must be running.
+Open `http://0.0.0.0:5173` — both servers must be running.
 
 ## API Endpoints
 
