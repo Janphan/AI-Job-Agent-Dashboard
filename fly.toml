@@ -1,13 +1,12 @@
-# fly.toml app configuration file generated for ai-job-agent-dashboard on 2026-06-15T16:31:19+03:00
+# fly.toml app configuration file generated for ai-job-agent-dashboard-nnz5aw on 2026-11-03T18:20:57Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'ai-job-agent-dashboard'
+app = 'ai-job-agent-dashboard-nnz5aw'
 primary_region = 'arn'
 
-[build.args]
-VITE_API_URL = "https://backend-ai-job-agent-dashboard.fly.dev"
+[build]
 
 [http_service]
   internal_port = 8080
